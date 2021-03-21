@@ -29,10 +29,11 @@ bot.on('location', (ctx) => {
 
 
   let a = function (response) {
+    let b = response.data;
   	ctx.reply(`Current weather in your location:
-      ${response.data.weather[0].main} (${response.data.weather[0].description})
-      Temperature: ${response.data.main.temp}°C, feels like ${response.data.main.feels_like}°C
-      Wind: ${response.data.wind.speed} mps`);
+      ${b.weather[0].main} (${b.weather[0].description})
+      Temperature: ${b.main.temp}°C, feels like ${b.main.feels_like}°C
+      Wind: ${b.wind.speed} mps`);
     console.log(response.data);
   }
 
