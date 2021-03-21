@@ -27,6 +27,8 @@ bot.on('location', (ctx) => {
   options.params.lat = ctx.message.location.latitude;
   options.params.lon = ctx.message.location.longitude;
 
+  let abc = 1+2+3
+
 
   let a = function (response) {
     let b = response.data;
