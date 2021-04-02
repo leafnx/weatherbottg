@@ -1,4 +1,4 @@
-const { Telegraf, Markup } = require('telegraf')
+const { Telegraf } = require('telegraf')
 const axios = require("axios").default;
 
 const apiKey = 'fb55adb6f1msh4004c667879b7a7p1ec77ejsnc23812672588';
