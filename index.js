@@ -3,7 +3,10 @@ const axios = require("axios").default;
 
 const apiKey = 'fb55adb6f1msh4004c667879b7a7p1ec77ejsnc23812672588';
 const apiHost = 'community-open-weather-map.p.rapidapi.com';
-const defaultUrl = 'https://community-open-weather-map.p.rapidapi.com'
+const optHeaders = {
+  'x-rapidapi-key': apiKey,
+  'x-rapidapi-host': apiHost,
+};
 
 
 const bot = new Telegraf('1717568476:AAHBD98TBElaJ7YQ4aTFZlK9OBRpzxBi-JU')
@@ -31,20 +34,17 @@ bot.command('test', (ctx) => {
   bot.action('dayWeather', (ctx) => {
     const options = {
       method: 'GET',
-      url: defaultUrl + '/weather',
+      url: 'https://' + apiHost + '/weather',
       params: {
         lat: userLat,
         lon: userLon,
         lang: 'en',
         units: 'metric',
       },
-      headers: {
-        'x-rapidapi-key': apiKey,
-        'x-rapidapi-host': apiHost,
-      }
+      headers: optHeaders,
     };
 
-    let respFunc = function (response) {
+    let respFunc = (response) => {
       let weatherData = response.data;
       ctx.reply(
         `Weather:
@@ -64,20 +64,17 @@ bot.command('test', (ctx) => {
   bot.action('5dWeather', (ctx) => {
     const options = {
       method: 'GET',
-      url: defaultUrl + '/forecast',
+      url: 'https://' + apiHost + '/forecast',
       params: {
         lat: userLat,
         lon: userLon,
         lang: 'en',
         units: 'metric',
       },
-      headers: {
-        'x-rapidapi-key': apiKey,
-        'x-rapidapi-host': apiHost,
-      }
+      headers: optHeaders,
     };
 
-    let respFunc = function (response) {
+    let respFunc = (response) => {
       let weatherData = response.data;
       console.log(weatherData.list);
       weatherData.list.forEach((itemList) => {
