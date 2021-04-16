@@ -49,12 +49,22 @@ let inKbrdLang = {
     ]
   }
 };
+function sessionStart(ctx) {
+  if (ctx.session === undefined) {
+    ctx.session = {
+      lang: 'en',
+      lastReqTimeDayweather: null,
+      lastReqTime5dweather: null,
+    }
+  };
+};
 
 bot.use(session());
 bot.action('dayWeather', (ctx) => {
   options.url = 'https://' + apiHost + '/weather';
   options.params.lat = ctx.session.userLat;
   options.params.lon = ctx.session.userLon;
+  options.params.lang = ctx.session.lang;
 
   let respFunc = (response) => {
     let weatherData = response.data;
@@ -76,16 +86,21 @@ bot.action('dayWeather', (ctx) => {
           `Ветер:
           ${weatherData.wind.speed} м/с`
         );}
-      console.log(weatherData);
+    ctx.session.lastReqTimeDayweather = Date.now();
   }
-  axios.request(options).then(respFunc).catch(function (error) {
-    console.error(error);
-  });
+  if(Date.now() - ctx.session.lastReqTimeDayweather > 5000) {
+    axios.request(options).then(respFunc).catch(function (error) {
+      console.error(error);
+    });
+  } else {
+    ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTimeDayweather)) / 1000} sec`);
+  }
 });
 bot.action('5dWeather', (ctx) => {
   options.url = 'https://' + apiHost + '/forecast';
   options.params.lat = ctx.session.userLat;
   options.params.lon = ctx.session.userLon;
+  options.params.lang = ctx.session.lang;
 
   let respFunc = (response) => {
     let weatherData = response.data;
@@ -114,51 +129,47 @@ bot.action('5dWeather', (ctx) => {
         })
       }
     })
+    ctx.session.lastReqTime5dweather = Date.now();
   }
-  axios.request(options).then(respFunc).catch(function (error) {
-    console.error(error);
-  });
+  if(Date.now() - ctx.session.lastReqTime5dweather > 5000) {
+    axios.request(options).then(respFunc).catch(function (error) {
+      console.error(error);
+    });
+  } else {
+    ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTime5dweather)) / 1000} sec`);
+  }
 });
 bot.action('langEN', (ctx) => {
-  options.params.lang = 'en';
+  sessionStart(ctx);
+  ctx.session.lang = 'en';
 });
 bot.action('langRU', (ctx) => {
-  options.params.lang = 'ru';
+  sessionStart(ctx);
+  ctx.session.lang = 'ru';
 })
 
 bot.start((ctx) => ctx.reply('Hello, please choose language', inKbrdLang));
-bot.help((ctx) => ctx.reply('Send me your location'));
+bot.help((ctx) => ctx.reply('Hello please send me your location'));
 
 bot.command('test', (ctx) => {
-  if (ctx.session === undefined) {
-    ctx.session = {
-      userLat: null,
-      userLon: null,
-      }
-  };
+  sessionStart(ctx);
 
   ctx.session.userLat = '54.5314';
   ctx.session.userLon = '36.3089';
 
-  if(options.params.lang == 'en') {
+  if(ctx.session.lang == 'en') {
     ctx.reply('Choose', inKbrd);
-  } else {
+    } else {
       ctx.reply('Выбирайте', inKbrdRU);
-  }
-
+      }
 });
 bot.on('location', (ctx) => {
-  if (ctx.session === undefined) {
-    ctx.session = {
-      userLat: null,
-      userLon: null,
-      }
-  };
+  sessionStart(ctx);
 
   ctx.session.userLat = ctx.message.location.latitude;
   ctx.session.userLon = ctx.message.location.longitude;
 
-  if(options.params.lang == 'en') {
+  if(ctx.session.lang == 'en') {
     ctx.reply('Choose', inKbrd);
   } else {
       ctx.reply('Выбирайте', inKbrdRU);
