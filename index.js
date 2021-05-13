@@ -1,140 +1,29 @@
-require('dotenv').config();
-const { Telegraf, session } = require('telegraf');
-const axios = require("axios").default;
+import { Telegraf, session } from 'telegraf';
+import dotenv from 'dotenv';
+import axios from 'axios';
+import { options } from './modules/options.js';
+import { inKbrdEN, inKbrdRU, inKbrdLang } from './modules/keyboards.js';
+import { sessionStart } from './modules/helpers.js';
+import { Actions } from './modules/botActions.js';
+dotenv.config();
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
-const apiKey = process.env.API_KEY;
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const resp = new Actions;
 const apiHost = process.env.API_HOST;
-const options = {
-  method: 'GET',
-  url: '0',
-  params: {
-    lat: 'userLat',
-    lon: 'userLon',
-    lang: 'en',
-    units: 'metric',
-  },
-  headers: {
-    'x-rapidapi-key': apiKey,
-    'x-rapidapi-host': apiHost,
-  },
-};
-let inKbrd = {
-  reply_markup: {
-    inline_keyboard: [
-      [
-        {text: 'Today forecast', callback_data: 'dayWeather'},
-        {text: '5 days forecast', callback_data: '5dWeather'},
-      ]
-    ]
-  }
-};
-let inKbrdRU = {
-  reply_markup: {
-    inline_keyboard: [
-      [
-        {text: 'Погода на сегодня', callback_data: 'dayWeather'},
-        {text: 'Погода на 5 дней', callback_data: '5dWeather'},
-      ]
-    ]
-  }
-};
-let inKbrdLang = {
-  reply_markup: {
-    inline_keyboard: [
-      [
-        {text: 'EN', callback_data: 'langEN'},
-        {text: 'RU', callback_data: 'langRU'},
-      ]
-    ]
-  }
-};
-function sessionStart(ctx) {
-  if (ctx.session === undefined) {
-    ctx.session = {
-      lang: 'en',
-      lastReqTimeDayweather: null,
-      lastReqTime5dweather: null,
-    }
-  };
-};
 
 bot.use(session());
-bot.action('dayWeather', (ctx) => {
-  options.url = 'https://' + apiHost + '/weather';
-  options.params.lat = ctx.session.userLat;
-  options.params.lon = ctx.session.userLon;
-  options.params.lang = ctx.session.lang;
-
-  let respFunc = (response) => {
-    let weatherData = response.data;
-    if(options.params.lang == 'en') {
-      ctx.reply(
-        `Weather:
-        ${weatherData.weather[0].main} (${weatherData.weather[0].description})\n\r`+
-        `Temperature:
-        ${Math.round(weatherData.main.temp)}°C, feels like ${Math.round(weatherData.main.feels_like)}°C\n\r`+
-        `Wind:
-        ${weatherData.wind.speed} mps`
-      );
-    } else {
-        ctx.reply(
-          `Погода:
-          ${weatherData.weather[0].main} (${weatherData.weather[0].description})\n\r`+
-          `Температура:
-          ${Math.round(weatherData.main.temp)}°C, по ощущению ${Math.round(weatherData.main.feels_like)}°C\n\r`+
-          `Ветер:
-          ${weatherData.wind.speed} м/с`
-        );}
-    ctx.session.lastReqTimeDayweather = Date.now();
-  }
+bot.action('dayWeather', async (ctx) => {
   if(Date.now() - ctx.session.lastReqTimeDayweather > 5000) {
-    axios.request(options).then(respFunc).catch(function (error) {
-      console.error(error);
-    });
+    ctx.session.lastReqTimeDayweather = Date.now();
+    ctx.reply(await resp.dayWeather(ctx.session));
   } else {
-    ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTimeDayweather)) / 1000} sec`);
-  }
+      ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTimeDayweather)) / 1000} sec`);
+    }
 });
-bot.action('5dWeather', (ctx) => {
-  options.url = 'https://' + apiHost + '/forecast';
-  options.params.lat = ctx.session.userLat;
-  options.params.lon = ctx.session.userLon;
-  options.params.lang = ctx.session.lang;
-
-  let respFunc = (response) => {
-    let weatherData = response.data;
-    weatherData.list.forEach((itemList) => {
-      if (itemList.dt_txt.includes('15:00:00')) {
-        console.log(itemList.dt_txt.slice(0, 10));
-        itemList.weather.forEach((eachWeather) => {
-          console.log(eachWeather.main);
-              if(options.params.lang == 'en') {
-                ctx.reply(
-                  `Weather for ${itemList.dt_txt.slice(0, 10)}\n\r`+
-                  `General: ${eachWeather.main}\n\r`+
-                  `Temperature: ${Math.round(itemList.main.temp)}°C, `+
-                  `feels like ${Math.round(itemList.main.feels_like)}°C\n\r`+
-                  `Wind: ${itemList.wind.speed} mps`
-                );
-              } else {
-                  ctx.reply(
-                    `Погода на ${itemList.dt_txt.slice(0, 10)}\n\r`+
-                    `Общее: ${eachWeather.main}\n\r`+
-                    `Температура: ${Math.round(itemList.main.temp)}°C, `+
-                    `по ощущению ${Math.round(itemList.main.feels_like)}°C\n\r`+
-                    `Ветер: ${itemList.wind.speed} м/с`
-                  );
-                }
-        })
-      }
-    })
-    ctx.session.lastReqTime5dweather = Date.now();
-  }
+bot.action('5dWeather', async (ctx) => {
   if(Date.now() - ctx.session.lastReqTime5dweather > 5000) {
-    axios.request(options).then(respFunc).catch(function (error) {
-      console.error(error);
-    });
+    ctx.session.lastReqTime5dweather = Date.now();
+    ctx.reply(await resp.fiveDaysWeather(ctx.session));
   } else {
     ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTime5dweather)) / 1000} sec`);
   }
@@ -158,7 +47,7 @@ bot.command('test', (ctx) => {
   ctx.session.userLon = '36.3089';
 
   if(ctx.session.lang == 'en') {
-    ctx.reply('Choose', inKbrd);
+    ctx.reply('Choose', inKbrdEN);
     } else {
       ctx.reply('Выбирайте', inKbrdRU);
       }
@@ -170,7 +59,7 @@ bot.on('location', (ctx) => {
   ctx.session.userLon = ctx.message.location.longitude;
 
   if(ctx.session.lang == 'en') {
-    ctx.reply('Choose', inKbrd);
+    ctx.reply('Choose', inKbrdEN);
   } else {
       ctx.reply('Выбирайте', inKbrdRU);
   }
