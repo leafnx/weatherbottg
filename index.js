@@ -20,13 +20,33 @@ bot.action('dayWeather', async (ctx) => {
       ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTimeDayweather)) / 1000} sec`);
     }
 });
+// bot.action('5dWeather', async (ctx) => {
+//   if(Date.now() - ctx.session.lastReqTime5dweather > 5000) {
+//     ctx.session.lastReqTime5dweather = Date.now();
+//     console.log(await resp.fiveDaysWeather(ctx.session));
+//     ctx.reply(await resp.fiveDaysWeather(ctx.session));
+//   } else {
+//     ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTime5dweather)) / 1000} sec`);
+//   }
+// });
 bot.action('5dWeather', async (ctx) => {
-  if(Date.now() - ctx.session.lastReqTime5dweather > 5000) {
-    ctx.session.lastReqTime5dweather = Date.now();
-    ctx.reply(await resp.fiveDaysWeather(ctx.session));
-  } else {
-    ctx.reply(`Pay 300$ or wait ${(5000-(Date.now() - ctx.session.lastReqTime5dweather)) / 1000} sec`);
-  }
+  const abc = await resp.fiveDaysWeather(ctx.session);
+  abc.forEach((pogoda) => {
+    console.log(pogoda);
+    if(ctx.session.lang == 'en') {
+      ctx.reply(`Weather for ${pogoda.dt_txt.slice(0, 10)}\n\r`+
+       `General: ${pogoda.weather[0].main}\n\r`+
+       `Temperature: ${Math.round(pogoda.main.temp)}°C, `+
+       `feels like ${Math.round(pogoda.main.feels_like)}°C\n\r`+
+       `Wind: ${pogoda.wind.speed} mps`);
+    } else {
+       ctx.reply(`Погода на ${pogoda.dt_txt.slice(0, 10)}\n\r`+
+         `Общее: ${pogoda.weather[0].main}\n\r`+
+         `Температура: ${Math.round(pogoda.main.temp)}°C, `+
+         `по ощущению ${Math.round(pogoda.main.feels_like)}°C\n\r`+
+         `Ветер: ${pogoda.wind.speed} м/с`);
+     }
+  })
 });
 bot.action('langEN', (ctx) => {
   sessionStart(ctx);
